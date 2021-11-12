@@ -13,7 +13,10 @@ from datetime import datetime
 
 client = discord.Client()
 
+
 evan_is_the_best = ["ur so cool evan", "audrey sux"]
+
+
 
 if "responding" not in db.keys():
   db["responding"] = True
