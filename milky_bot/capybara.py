@@ -1,5 +1,6 @@
 import discord
 import random
+#from replit import db
 from milky_bot.resources import bs
 
 def capybara_embed(message, random_channel):
@@ -18,6 +19,8 @@ def capybara_embed(message, random_channel):
   embed.add_field(name="✧･ﾟ: ✧･ﾟ: 　　 :･ﾟ✧:･ﾟ✧", value="mm yes coconut doggys", inline=False)
   #embed.timestamp = datetime.utcnow().isoformat()
   embed.set_footer(text="thank you for running da capybara command")
+  if message.author.id in bs.users:
+    bs.users[message.author.id]["capybara_count"] += 1
   return embed
 
   #SyntaxError: 'await' outside async function

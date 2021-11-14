@@ -11,6 +11,7 @@ from milky_bot.inspire_bot import inspire
 from milky_bot import profile
 #from datetime import datetime
 from milky_bot import capybara
+from milky_bot import economy
 
 client = discord.Client()
 
@@ -41,61 +42,90 @@ async def on_message(message):
         msg = await client.wait_for('message', check=check, timeout=10 )
         await channel.send('Hello {.author}!'.format(msg))
   
-  #does not save user data after bot stops running
+  if msg.startswith("clear"):
+    for key in db.keys():
+      del db[key]
+    await message.channel.send("cleared")
+
+  if msg.startswith("db"):
+    for key in db.keys():
+      await message.channel.send(db[key])
+
+  if msg.startswith("<"):
+    values = msg.lstrip("<").split()
+    if values[0] in profile.methods:
+      output = profile.methods[values[0]](message)
+      if type(output) == str:
+        await message.channel.send(output)
+      elif type(output) == discord.Embed:
+        await message.channel.send("", embed=output)
   if msg.startswith(">"):
-    values = msg.lstrip(">").split()
-    #implement directly calling method with name given in values[0]
+    if str(msg_author) in db.keys():
+      values = msg.lstrip(">").split()
+      if values[0] in profile.methods:
+        output = profile.methods[values[0]](message)
+        if type(output) == str:
+          await message.channel.send(output)
+        elif type(output) == discord.Embed:
+          await message.channel.send("", embed=output)
+    else:
+      await message.channel.send("", embed=profile.welcome(message))
+    """
     command = values[0]
     if command == "start":
-      await message.channel.send(profile.start(msg_author, values))
+      await message.channel.send(profile.start(message))
+    elif command == "set_color":
+      await message.channel.send(profile.set_color(message))
     elif command == "display":
       #catch exception where profile isn't created
-      await message.channel.send("", embed=profile.display(msg_author))
+      await message.channel.send("", embed=profile.display(message))
+    elif command == "remove":
+      await message.channel.send(profile.remove(message))
     elif command == "capybara":
       #check bot permissions to randomize sends only in text_channels it has permission to
       random_channel = random.choice(message.guild.text_channels)
       await random_channel.send("capybara party time!", tts=True, embed=capybara.capybara_embed(message, random_channel))
+    elif command == "echo":
+      profile.echo(message, values[1])
     else:
       await message.channel.send("no command for {} found".format(values[0]))
+    """
 
-  if msg.startswith(">id"):
-    await message.channel.send("message author: {}, author nick: {}".format(msg_author, msg_author.display_name))
+  if msg.startswith("-setbalance"):
+    values = msg.lstrip("-setbalance ").split()
+    if values == []:
+      await message.channel.send("To use setbalance, you need to add the balance after the command! Ex: -setbalance 10")
+    else:
+      await message.channel.send(economy.set_balance(message, values[0]))
   
-  if msg.startswith("$inspire"):
-    quote = inspire.get_quote()
-    await message.channel.send(quote)
+  if msg.startswith("-balance"):
+    await message.channel.send(economy.get_balance(message))
+  
+  if msg.startswith("-gamble"):
+    await message.channel.send(economy.gamble(message))
+  
+  if msg.startswith("-welcome"):
+    await message.channel.send(profile.welcome(message))
+  
+  if msg.startswith("-inituser"):
+    await message.channel.send(profile.init_user(message))
+
+  if msg.startswith("-profile"):
+    await message.channel.send(profile.display_profile(message))
 
   if db["responding"]:
     options = inspire.starter_encouragements
     if "encouragements" in db.keys():
       options = options + db["encouragements"]
 
-    if any(word in msg for word in inspire.sad_words):
-      #i do a little trolling
-      if message.author.id == 291351371612160010:
-        await message.channel.send(random.choice(evan_is_the_best))
-      else:
-        await message.channel.send(random.choice(options))
+  
+  if any(word in msg for word in inspire.sad_words):
+    #i do a little trolling
+    if message.author.id == 291351371612160010:
+      await message.channel.send(random.choice(evan_is_the_best))
+    else:
+      await message.channel.send(random.choice(options))
 
-  if msg.startswith("$new"):
-    encouraging_message = msg.split("$new ",1)[1]
-    inspire.update_encouragements(encouraging_message)
-    await message.channel.send("New encouraging message added.")
-
-  if msg.startswith("$del"):
-    encouragements = []
-    if "encouragements" in db.keys():
-      index = int(msg.split("$del",1)[1])
-      inspire.delete_encouragment(index)
-      encouragements = db["encouragements"]
-    await message.channel.send(encouragements)
-
-  if msg.startswith("$list"):
-    encouragements = []
-    if "encouragements" in db.keys():
-      encouragements = db["encouragements"]
-    await message.channel.send(encouragements)
-    
   if msg.startswith("$responding"):
     value = msg.split("$responding ",1)[1]
 
